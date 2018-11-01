@@ -19,7 +19,7 @@ class ChristofidesAlgorithm:
             mst.add_edge(v, closest, weight=weight)
             odd_vert.remove(closest)
 
-    """Function that perform Christofides algorithm"""
+    """Function that perform Christofides approximation algorithm"""
     def christofides(self, pos):
 
         opGraph = nx.DiGraph()

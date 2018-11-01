@@ -39,7 +39,7 @@ class KruskalAlgorithm:
             parent[yRoot] = xRoot
             order[xRoot] += 1
 
-    def kruskal(self):
+    def computeKruskal(self):
         """Function that performs Kruskal algorithm on the graph 'graph'
            vLen denotes the number of vertices in G
            mst_graph contains the MST graph
@@ -66,8 +66,8 @@ class KruskalAlgorithm:
             curr_edge = self.getMin(self.graph, mstFlag)
             """Update the flag for the current edge"""
             mstFlag[curr_edge] = True
-            y = self.findRoot(parent, curr_edge[1])
-            x = self.findRoot(parent, curr_edge[0])
+            y = self.findRoot(parent, list(self.graph.nodes).index(curr_edge[1]))
+            x = self.findRoot(parent, list(self.graph.nodes).index(curr_edge[0]))
             """Adds the edge to MST, if including it doesn't form a cycle"""
             if x != y:
                 mst.append(curr_edge)

@@ -4,6 +4,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from data_structure import NetworkPoint, Depot, PointOfInterest
 from utility import GenerateLatLong
+from algorithms import RootedTreeCoverAlgorithm
 
 
 class Main:
@@ -72,7 +73,7 @@ class Main:
         self.numberOfPoints = numberOfPoints
         self.listPoints = []
         self.uniqueSpeed = uniqueSpeed
-        self.graph = nx.Graph()
+        self.graph = nx.DiGraph()
 
         if fromFile != "":
             self.importFromFile(fromFile)
@@ -84,8 +85,17 @@ class Main:
         self.adjMatrix = np.zeros((self.numberOfDepot + self.numberOfPoints, self.numberOfDepot + self.numberOfPoints))
         self.setEdges()
 
-        """Plot graph in kamada layout"""
+        """Plot the initial graph in kamada layout"""
         self.drawGraphKamada()
+
+        """Execute RTCP (Rooted Tree Cover Problem) approximation algorithm 
+           with a upper bound B at max edge cost (ignore upper bound)"""
+
+        """Compute max edge cost"""
+        maxEdge = max([data['weight'] for u, v, data in self.graph.edges(data=True)])
+        """Execute RTCP"""
+        rtcp = RootedTreeCoverAlgorithm.RootedTreeCoverAlgorithm(self.graph, maxEdge)
+        rootedGraphs = rtcp.computeRootedTreeCover()
 
 
 """Testing"""
