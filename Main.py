@@ -1,10 +1,9 @@
 import json
-import numpy as np
 import networkx as nx
-import matplotlib.pyplot as plt
 from data_structure import NetworkPoint, Depot, PointOfInterest
-from utility import GenerateLatLong
-from algorithms import RootedTreeCoverAlgorithm
+from utility import GenerateLatLong, DrawGraph
+from algorithms import AtspnAlgorithm
+from string import ascii_lowercase
 
 
 class Main:
@@ -18,17 +17,17 @@ class Main:
 
             """Generate depot nodes"""
             self.numberOfDepot = len(listDepot)
-            for depot in listDepot:
+            for index, depot in enumerate(listDepot):
                 newNode = Depot.Depot(depot["latitude"], depot["longitude"], depot["delay"])
                 self.listDepot.append(newNode)
-                self.graph.add_node(newNode)
+                self.graph.add_node(newNode, label=ascii_lowercase[index])
 
             """Generate point of interest nodes"""
             self.numberOfPoints = len(listPointOfInterest)
-            for point in listPointOfInterest:
+            for index, point in enumerate(listPointOfInterest):
                 newNode = PointOfInterest.PointOfInterest(point["latitude"], point["longitude"])
                 self.listPoints.append(newNode)
-                self.graph.add_node(newNode)
+                self.graph.add_node(newNode, label=index+1)
 
     def setEdges(self):
         """Generate edges from depot to other nodes"""
@@ -47,24 +46,6 @@ class Main:
                     weight = NetworkPoint.NetworkPoint.getDistance(point, otherNode)
                     self.graph.add_edge(point, otherNode, weight=weight)
 
-    def drawGraphKamada(self):
-        """Plot graph in kamada layout"""
-
-        """Create a dictionary with latitude/longitude values for each nodes"""
-        dictPos = {}
-        for node in self.graph.nodes:
-            dictPos[node] = (node.getLatitude(), node.getLongitude())
-
-        """Plot the graph"""
-        pos = nx.kamada_kawai_layout(self.graph, dictPos)
-        nx.draw_networkx_nodes(self.graph, pos, nodelist=self.listDepot, node_color='r')
-        nx.draw_networkx_nodes(self.graph, pos, nodelist=self.listPoints, node_color='b')
-        nx.draw_networkx_edges(self.graph, pos,
-                               edgelist=[edge for edge in self.graph.edges if type(edge[0]) == Depot.Depot])
-        plt.axis('off')
-        plt.draw()
-        plt.show()
-
     def __init__(self, uniqueSpeed, numberOfDepot=None, numberOfPoints=None, fromFile=""):
         """Generate the graph from a json file or generate random values for depot and point of interest
            (size based on the numbers in input) in the file data.json """
@@ -82,21 +63,16 @@ class Main:
             self.importFromFile("data.json")
 
         """After import the nodes set the weight of the edges (complete graph!)"""
-        self.adjMatrix = np.zeros((self.numberOfDepot + self.numberOfPoints, self.numberOfDepot + self.numberOfPoints))
         self.setEdges()
 
         """Plot the initial graph in kamada layout"""
-        self.drawGraphKamada()
+        plot = DrawGraph.DrawGraph()
+        plot.drawGraphKamada(self.graph, highlightEdge=False, depot_color='r', point_color='b')
 
-        """Execute RTCP (Rooted Tree Cover Problem) approximation algorithm 
-           with a upper bound B at max edge cost (ignore upper bound)"""
-
-        """Compute max edge cost"""
-        maxEdge = max([data['weight'] for u, v, data in self.graph.edges(data=True)])
-        """Execute RTCP"""
-        rtcp = RootedTreeCoverAlgorithm.RootedTreeCoverAlgorithm(self.graph, maxEdge)
-        rootedGraphs = rtcp.computeRootedTreeCover()
+        """Compute ATSPN algorithm"""
+        atspn = AtspnAlgorithm.AtspnAlgorithm(self.graph)
+        atspn.computeAtspn()
 
 
 """Testing"""
-instance = Main(uniqueSpeed=1.5, fromFile="data.json")
+instance = Main(uniqueSpeed=1.5, fromFile='data.json')

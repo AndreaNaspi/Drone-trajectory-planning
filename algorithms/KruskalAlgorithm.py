@@ -1,5 +1,6 @@
 import sys
 import networkx as nx
+from data_structure import Depot
 
 
 class KruskalAlgorithm:
@@ -76,6 +77,13 @@ class KruskalAlgorithm:
         for x in mst:
             if (x[0], x[1]) in self.graph.edges():
                 mst_graph.add_edge(x[0], x[1], weight=self.graph[x[0]][x[1]]['weight'])
+
+        """Label the nodes in mst_graph"""
+        for index, node in enumerate(mst_graph.nodes()):
+            if type(node) == Depot.Depot:
+                mst_graph.add_node(node, label='r')
+            else:
+                mst_graph.add_node(node, label=index)
 
         return mst_graph
 

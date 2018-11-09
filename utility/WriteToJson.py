@@ -32,5 +32,5 @@ class WriteToJson:
         self.listDepot = listDepot
         self.listPoints = listPoints
 
-        """Set random seed"""
+        """Set seed"""
         seed(600)

@@ -37,7 +37,7 @@ class GenerateLatLong:
         self.numberOfDepot = numberOfDepot
         self.numberOfPoints = numberOfPoint
 
-        "Set random seed"
+        "Set seed"
         seed(600)
 
         "Generate start point latitude, longitude"

@@ -1,8 +1,8 @@
 import networkx as nx
-import matplotlib.pyplot as plt
 from random import uniform
 from data_structure import Depot, PointOfInterest
 from algorithms import KruskalAlgorithm
+from utility import DrawGraph
 
 
 class RootedTreeCoverAlgorithm:
@@ -12,10 +12,10 @@ class RootedTreeCoverAlgorithm:
 
         """Add the single depot root at random location with delay 0 (no interest on location and delay data)"""
         singleDepotRoot = Depot.Depot(uniform(-90.000000000, 90.000000000), uniform(-180.000000000, 180.000000000), 0)
-        contractingGraph.add_node(singleDepotRoot)
+        contractingGraph.add_node(singleDepotRoot, label="r")
 
         """Insert point of interest nodes (no change prom previous graph)"""
-        pointOfInterestNodes = [node for node in self.originalGraph.nodes if type(node) == PointOfInterest.PointOfInterest]
+        pointOfInterestNodes = [(node, data) for node, data in self.originalGraph.nodes(data=True) if type(node) == PointOfInterest.PointOfInterest]
         contractingGraph.add_nodes_from(pointOfInterestNodes)
 
         """Add edges from point of interest to point of interest (no change from previous graph)"""
@@ -45,16 +45,15 @@ class RootedTreeCoverAlgorithm:
         uncontractingGraph = nx.DiGraph()
 
         """Add all point of interest nodes"""
-        pointOfInterestNodes = [node for node in contractingGraph.nodes if type(node) == PointOfInterest.PointOfInterest]
+        pointOfInterestNodes = [(node, data) for node, data in contractingGraph.nodes(data=True) if type(node) == PointOfInterest.PointOfInterest]
         uncontractingGraph.add_nodes_from(pointOfInterestNodes)
 
         """Add all depot nodes from original graph"""
-        depotNodes = [node for node in self.originalGraph.nodes if type(node) == Depot.Depot]
+        depotNodes = [(node, data) for node, data in self.originalGraph.nodes(data=True) if type(node) == Depot.Depot]
         uncontractingGraph.add_nodes_from(depotNodes)
 
         """Add all edges (if exist) from point of interest to point of interest"""
-        pointOfInterestEdges = [(v, u) for v, u in contractingGraph.edges if ((type(v) == PointOfInterest.PointOfInterest)
-                                                                    & (type(u) == PointOfInterest.PointOfInterest))]
+        pointOfInterestEdges = [(v, u) for v, u in contractingGraph.edges if ((type(v) == PointOfInterest.PointOfInterest) & (type(u) == PointOfInterest.PointOfInterest))]
         uncontractingGraph.add_edges_from(pointOfInterestEdges)
 
         """Map the edges to single depot root into multiple depot"""
@@ -66,23 +65,6 @@ class RootedTreeCoverAlgorithm:
 
         return uncontractingGraph
 
-    def drawGraphKamada(self, graph):
-        """Plot graph in kamada layout"""
-
-        """Create a dictionary with latitude/longitude values for each nodes"""
-        dictPos = {}
-        for node in graph.nodes:
-            dictPos[node] = (node.getLatitude(), node.getLongitude())
-
-        """Plot the graph"""
-        pos = nx.kamada_kawai_layout(graph, dictPos)
-        nx.draw_networkx_nodes(graph, pos, nodelist=[node for node in graph.nodes if type(node) == Depot.Depot], node_color='g')
-        nx.draw_networkx_nodes(graph, pos, nodelist=[node for node in graph.nodes if type(node) == PointOfInterest.PointOfInterest], node_color='b')
-        nx.draw_networkx_edges(graph, pos, edgelist=graph.edges)
-        plt.axis('off')
-        plt.draw()
-        plt.show()
-
     def computeRootedTreeCover(self):
         """Compute the RTCP (Rooted Tree Cover Problem) 4+epsilon approximation algorithm with edge upper bound B"""
 
@@ -93,23 +75,26 @@ class RootedTreeCoverAlgorithm:
                 removeEdge.append(edge[:2])
         self.originalGraph.remove_edges_from(removeEdge)
 
+        """Instantiate plot object"""
+        plot = DrawGraph.DrawGraph()
+
         """Compute contracting graph with single depot root"""
         contractingGraph = self.generateContractingGraph()
-        self.drawGraphKamada(contractingGraph)
+        plot.drawGraphKamada(contractingGraph, False, 'g', 'b')
 
         """Compute MST of contracting graph with Kruskal Algorithm"""
         kruskal = KruskalAlgorithm.KruskalAlgorithm(contractingGraph)
         mstContractingGraph = kruskal.computeKruskal()
-        self.drawGraphKamada(mstContractingGraph)
+        plot.drawGraphKamada(mstContractingGraph, True, 'g', 'b')
 
         """Uncontracting the contracting graph after the Kruskal application"""
         uncontractingGraph = self.generateUncontractingGraph(mstContractingGraph)
-        self.drawGraphKamada(uncontractingGraph)
+        plot.drawGraphKamada(uncontractingGraph, True, 'r', 'b')
 
         """Generate single tree for each depot"""
         depotRoot = []
         for root in [root for root in uncontractingGraph.nodes if type(root) == Depot.Depot]:
-            depotRoot.append(nx.dfs_tree(uncontractingGraph,root))
+            depotRoot.append(nx.DiGraph(uncontractingGraph.edge_subgraph(list(nx.dfs_edges(uncontractingGraph, root)))))
 
         return depotRoot
 
